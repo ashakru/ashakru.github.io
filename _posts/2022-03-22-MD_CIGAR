@@ -1,0 +1,56 @@
+---
+title: "MD tag and CIGAR string in SAM/BAm file"
+categories:
+  - Blog
+tags:
+  - genomics
+  - bioinformatics
+  - notes
+---
+
+For my current project I had to utilise the MD tag and CIGAR string that accompany each mapped read in SAM/BAM file. Here is my understanding of the information stored in 
+MD tag and CIGAR with examples in pysam how to access and process them. 
+
+### Tags
+A SAM file stores aligned sequencing reads in a table format. Tags are optional fields containing additional information about a read. A tag consists of 
+three elements separated by `:`
+
+1. Two letter TAG key, eg. MD, NM...  
+2. A character indicating type of value stored. Available types:  
+
+| Type | Description |
+----------------------
+| A	| character |
+| i	| signed 32-bit integer |
+| f	| single-precision float |
+| Z	| string |
+| H | hex string |
+----------------------
+
+3. TAG value  
+
+For example, a tag in a SAM/BAM file `MD:Z:155` indicates that this is a `MD` tag containing string (`Z`) and taking value of `155`. 
+See [SAM/BAM format specification](https://genome.sph.umich.edu/wiki/SAM 
+https://samtools.github.io/hts-specs/SAMtags.pdf) for more information about different tags.  
+
+#### MD tag
+MD tag is a string encoding mismatched and deleted reference bases. It covers only aligned bases, which means it omits any insertions, soft clipped bases, 
+padding, reference skips. MD tag is a progression of letters and characters representing *blocks* in the aligned sequence of a read. 
+There are three types of *blocks* in the MD tag:
+
+1. Integers, [0 - 9]+ = a run of bases matching the reference sequence.   
+2. Letters, usually ACGT = a single base that is different to the reference sequence, the letter indicates the nucleotide that doesn’t match the reference. 
+3. ^[Letters] = a dash before the letters indicates a deletion in the aligned sequence. 
+
+{% capture notice-2 %}
+#### NOTE
+
+* The non reference bases refer to a forward strand only as all aligned sequences in a BAM/SAM file are represented in forward direction. 
+{% endcapture %}
+
+<div class="notice">{{ notice-2 | markdownify }}</div>
+
+#### MD tag vs. CIGAR  
+MD tag is not the same as CIGAR string. Althpugh both contains important information about the alignment, devil is in the details. CIGAR string takes the perspective of a read.
+This means that it contains the information about soft clipped part of a read or insertions. The same way, CIGAR indicates which part of.a read was succesfully aligned,
+BUT provides no clue regarding whether this alignment has occured with or without any mismatches or deletions. Luckily, this information is stored in an MD tag. 
